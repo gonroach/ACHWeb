@@ -1,0 +1,70 @@
+﻿@model Aplicacion.Base.AccountingFormularioEditViewDTO
+
+<div id="accountingEditContainer" style="height:auto">
+	<div>
+		<i class="fa fa-info-circle" aria-hidden="true"></i> @Html.LabelFor(model => model.ModalTitle)</div>
+	<div>
+        <div>
+        @using (Html.BeginRouteForm("Mantenedores_default", new { area = "Mantenedores", controller = "Accounting", action = "EditarAccounting" }, FormMethod.Post, new { id = "formularioAccountingEdit", @class = "pure-form pure-form-stacked" }))
+        { 
+            @Html.AntiForgeryToken()    
+            
+            @Html.HiddenFor(model => model.Id)            
+            @Html.HiddenFor(model => model.ProcessId)
+            @Html.HiddenFor(model => model.CurrencyId)
+            @Html.HiddenFor(model => model.BusinessId)
+        
+            <fieldset>
+				<legend><span id="AccoutingNombre">Accounting</span></legend>
+                                       
+                    <div class="pure-g">                        
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.Process)
+                            @Html.TextBoxFor(model => model.Process, new { @class = "input", @readonly = "readonly", @Style = "width:240px" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.Currency)
+                            @Html.TextBoxFor(model => model.Currency, new { @class = "input", @readonly = "readonly" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.Business)
+                            @Html.TextBoxFor(model => model.Business, new { @class = "input", @readonly = "readonly" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.DescriptionText)
+                            @Html.TextBoxFor(model => model.DescriptionText, new { @class = "input" , @maxLength = "100" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.HoldingAccount)
+                            @Html.TextBoxFor(model => model.HoldingAccount, new { @class = "input", @maxLength = "20" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.DebitText)
+                            @Html.TextBoxFor(model => model.DebitText, new { @class = "input" , @maxLength = "100" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.DebitTransactionId)
+                            @Html.TextBoxFor(model => model.DebitTransactionId, new { @class = "input", @maxLength = "10" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.CreditText)
+                            @Html.TextBoxFor(model => model.CreditText, new { @class = "input" , @maxLength = "100" })
+                        </div>
+                        <div class="pure-u-1-2">
+                            @Html.LabelFor(model => model.CreditTransactionId)
+                            @Html.TextBoxFor(model => model.CreditTransactionId, new { @class = "input" , @maxLength = "10" })
+                        </div>
+                    </div>
+    
+			</fieldset>
+        }
+        </div>
+		
+       <div id="botoneraAccountingEdit" class="botoneraModal">
+            <button type="button" id="cancel"><span id="btnCancelar">Cancel</span></button>
+            <button type="button" id="ok"><span id="btnGuardar">Save</span></button>
+        </div>
+
+	</div>
+</div>
+

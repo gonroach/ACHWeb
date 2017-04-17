@@ -1,0 +1,678 @@
+﻿@model Aplicacion.Base.DTO.Layout.AccountingLayout
+
+@{
+    ViewBag.Title = "Inicio";
+    Layout = "~/Areas/Mantenedores/Views/Shared/_Layout.cshtml";
+}
+
+<div id="toolbar">
+    <!-- buffer area between header and main body -->
+    <div class="toolbar_noleft_breadcrumb">
+        <a href="@Url.RouteUrl("Mantenedores_default", new { area = "Mantenedores", controller = "Bienvenida", action = "Inicio" })">Home</a> &gt; @Html.LabelFor(model => model.Title)
+        @*<a href="@Url.RouteUrl("Mantenedores_default", new { area = "Mantenedores", controller = "Bienvenida", action = "Inicio" })">Home</a> > <a href="@Url.RouteUrl("Mantenedores_default", new { area = "Mantenedores", controller = "Accounting", action = "Inicio" })">Accounting</a>*@
+    </div>
+</div>
+<!-- main content area w/ 3 column code snippet holders -->
+<!-- change class to content_bg to show -->
+<div id="content" class="content_bg content_noleft_noright">
+    <div class="col_2 col2_noleft_noright" id="PageContentBlock">
+        <div class="col_central">
+            <div class="breadcrumb">
+                &nbsp;
+            </div>
+            <div class="col_2_content">
+                <h1 id="pagetitle" style="margin-left: 1px" class="pagetitle">@Html.LabelFor(model => model.Title)</h1>
+                <div class="clear-block">
+
+                    <div class="form_info">
+
+                        <form id="formularioAccounting" class="pure-form pure-form-stacked">                            
+
+                                <legend style="margin-top: 15px; margin-bottom: 10px;">@Html.LabelFor(model => model.Filter)</legend>
+
+                                <div class="pure-g">																		
+											
+									<div class="pure-u-1-4">
+										@Html.LabelFor(model => model.Process)								
+										<div id='jqxDropProcess'></div>
+									</div>
+											
+									<div class="pure-u-1-4">
+										@Html.LabelFor(model => model.Currency)
+										<div id='jqxDropCurrency'></div>
+									</div>
+											
+									<div class="pure-u-1-4">
+										@Html.LabelFor(model => model.Business)						
+										<div id='jqxDropBusiness'></div>										
+									</div>
+																				
+								</div>
+
+                                <legend style="margin-top:15px; margin-bottom:10px;">@Html.LabelFor(model => model.Subtitle)</legend>
+											
+								<div style="margin-top:15px; margin-bottom:10px;" class="pure-u-5-5">
+
+									<button type="button" id="btnAdd" >@Html.LabelFor(model => model.Add)</button>
+									<button type="button" id="btnEdit" >@Html.LabelFor(model => model.Edit)</button>
+                                    <button type="button" id="btnEliminar" >@Html.LabelFor(model => model.Eliminar)</button>
+										
+								</div>
+										
+								<div style="margin-top:10px;" class="pure-u-5-5">									
+									<div id="jqxGridAccounting"></div>										
+								</div>
+                            
+                        </form>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="jqxLoader">
+    </div>
+<div style="display:none">
+    @Html.LabelFor(model => model.DebitText)
+    @Html.LabelFor(model => model.DebitTransactionId)
+    @Html.LabelFor(model => model.CreditText)
+    @Html.LabelFor(model => model.CreditTransactionId)
+    @Html.LabelFor(model => model.HoldingAccount)
+    @Html.LabelFor(model => model.DescriptionText)
+</div>
+@section ScriptsOptional{
+
+    <script type="text/javascript">
+
+        $(function () {
+            
+            var culture = cultureName == 'es-CL' ? 'es-ES' : 'en-US';
+
+            var nombreLoader = culture == "en-US" ? "Loading..." : "Cargando...";
+
+            //Buttons
+            $("#btnAdd").jqxButton({ theme: 'ui-start', height: 26, width: 70 });
+            $("#btnEdit").jqxButton({ theme: 'ui-start', height: 26, width: 70 });
+            $("#btnEliminar").jqxButton({ theme: 'ui-start', height: 26, width: 70 });
+
+
+
+            //loader
+            $("#jqxLoader").jqxLoader({ isModal: true, theme: 'ui-start', text: nombreLoader });
+
+            //Buttons click event
+
+            $("#btnAdd").on("click", function (event) {
+
+                event.preventDefault();
+
+                accountingNew();
+
+            });
+
+            $("#btnEdit").on("click", function (event) {
+
+                event.preventDefault();
+
+                accountingEdit();
+            });
+
+            $("#btnEliminar").on("click", function (event) {
+
+                event.preventDefault();
+
+                accountingDelete();
+            });
+
+            //inicializar drop process
+
+            var urlTransactionTypeConfiguration = '@Url.RouteUrl("Mantenedores_default", new{ area = "Mantenedores", controller = "Accounting", action = "ObtenerFiltroTransactionTypeConfiguration" })'
+
+            var transactionTypeConfigurationSource = {
+                datatype: "json",
+                datafields: [
+                    { name: 'Id', type: 'int' },
+                    { name: 'Glosa', type: 'string' }
+                ],
+                id: "Id",
+                url: urlTransactionTypeConfiguration,                
+                async: true
+            };
+
+            var transactionTypeDataAdapter = new $.jqx.dataAdapter(transactionTypeConfigurationSource);
+
+            $("#jqxDropProcess").jqxDropDownList({ selectedIndex: -1, theme: tema, width: 200, source: transactionTypeDataAdapter, autoDropDownHeight: true, displayMember: "Glosa", valueMember: "Id", placeHolder: cultureName == 'es-CL' ? 'Seleccionar...' : 'Select...' });
+
+            //------process drop onchange event
+
+            $("#jqxDropProcess").on('change', function (event) {
+                var args = event.args;
+
+                if (args) {
+                    var index = args.index;
+                    var item = args.item;
+
+                    currencySource.data = { processId: item.value };
+
+                    var currencyNewAdapter = new $.jqx.dataAdapter(currencySource);
+
+                    $("#jqxDropCurrency").jqxDropDownList({ source: currencyNewAdapter, disabled: false });
+
+                    $('#jqxLoader').jqxLoader('open');
+                    controlsAccounting.updateData();
+                    verificarFiltrosSeleccionados();
+                }
+            });
+
+            //inicializar currency drop
+
+            var urlCurrency = '@Url.RouteUrl("Mantenedores_default", new{ area = "Mantenedores", controller = "Accounting", action = "ObtenerFiltroCurrency" })'
+
+            var currencySource = {
+                datatype: "json",
+                datafields: [
+                    { name: 'Id', type: 'int' },
+                    { name: 'Glosa', type: 'string' }
+                ],
+                id: "Id",
+                url: urlCurrency,
+                data: {                    
+                    processId: $("#jqxDropProcess").jqxDropDownList('val'),
+                },
+                async: true
+            };
+
+            var currencyDataAdapter = new $.jqx.dataAdapter(currencySource);
+
+            $("#jqxDropCurrency").jqxDropDownList({ selectedIndex: -1, theme: tema, width: 200, source: currencyDataAdapter, autoDropDownHeight: true, displayMember: "Glosa", valueMember: "Id", placeHolder: cultureName == 'es-CL' ? 'Seleccionar...' : 'Select...' });
+
+            //------currency drop onchange event
+
+            $("#jqxDropCurrency").on('change', function (event) {
+                var args = event.args;
+
+                if (args) {
+                    $('#jqxLoader').jqxLoader('open');
+                    controlsAccounting.updateData();
+                    verificarFiltrosSeleccionados();
+                }
+            });
+
+            //inicializar business drop
+
+            var urlBusiness = '@Url.RouteUrl("Mantenedores_default", new{ area = "Mantenedores", controller = "Accounting", action = "ObtenerFiltroBusiness" })'
+
+            var businessSource = {
+                datatype: "json",
+                datafields: [
+                    { name: 'Id', type: 'int' },
+                    { name: 'Glosa', type: 'string' }
+                ],
+                id: "Id",
+                url: urlBusiness,
+                async: true
+            };
+
+            var businessDataAdapter = new $.jqx.dataAdapter(businessSource);
+
+            $("#jqxDropBusiness").jqxDropDownList({ selectedIndex: -1, theme: tema, width: 200, source: businessDataAdapter, autoDropDownHeight: true, displayMember: "Glosa", valueMember: "Id", placeHolder: cultureName == 'es-CL' ? 'Seleccionar...' : 'Select...' });
+
+            //------business drop onchange event
+
+            $("#jqxDropBusiness").on('change', function (event) {
+                var args = event.args;
+
+                if (args) {
+                    $('#jqxLoader').jqxLoader('open');
+                    controlsAccounting.updateData();
+                    verificarFiltrosSeleccionados();
+                }
+            });
+
+            var urlAccounting = '@Url.RouteUrl("Mantenedores_default", new{ area = "Mantenedores", controller = "Accounting", action = "ListarGrilla" })'
+           
+            $('#jqxLoader').jqxLoader('open');
+            controlsAccounting.init(urlAccounting);
+
+            verificarFiltrosSeleccionados();            
+
+        });
+
+        //funciones
+
+        var verificarFiltrosSeleccionados = function () {
+
+            
+            
+            var processIndex = $("#jqxDropProcess").jqxDropDownList('getSelectedIndex');
+            var currencyIndex = $("#jqxDropCurrency").jqxDropDownList('getSelectedIndex');
+            var businessIndex = $("#jqxDropBusiness").jqxDropDownList('getSelectedIndex');
+
+            if (processIndex != -1 && currencyIndex != -1 && businessIndex != -1) {
+                
+                $("#btnAdd").jqxButton({ disabled: false });
+            } else {                
+                $("#btnAdd").jqxButton({ disabled: true });
+
+            }
+        };       
+
+        //...........
+
+        var accountingNew = function () {
+
+            $('#jqxLoader').jqxLoader('open');
+
+            var urlAccountingNew = '@Url.RouteUrl("Mantenedores_default", new { area = "Mantenedores", controller = "Accounting", action = "FormularioAccountingNew" })';
+            
+            var processItem = $("#jqxDropProcess").jqxDropDownList('getSelectedItem');
+            var currencyItem = $("#jqxDropCurrency").jqxDropDownList('getSelectedItem');
+            var businessItem = $("#jqxDropBusiness").jqxDropDownList('getSelectedItem');
+
+            //$.get(urlAccountingNew, '{}', "html")
+            $.ajax({
+                url: urlAccountingNew,
+                dataType: "html",
+                data: '{}',
+                cache: false
+            })
+            .done(function (data) {
+
+                //evitar que se abra 2 veces el modal
+                if ($("#accountingNewContainer").length > 0 || $("#accountingEditContainer").length > 0)
+                    return false;
+
+                var window = $(data);
+
+                window.appendTo(document.body);
+
+                $('#jqxLoader').jqxLoader('close');
+
+                $(window).jqxWindow({
+                    maxHeight: 400, maxWidth: 600, minHeight: 30, minWidth: 250, height: 400, width: 550, theme: 'ui-start',
+                    resizable: false, isModal: true, modalOpacity: 0.7,
+                    initContent: function () {
+
+                        var btnCancelar = cultureName == "en-US" ? "Cancel" : "Cancelar";
+                        var btnGuardar = cultureName == "en-US" ? "Save" : "Guardar";
+                        var AccoutingNombre = cultureName == "en-US" ? "Accouting" : "Contabilidad";
+                        $("#btnCancelar").html(btnCancelar);
+                        $("#btnGuardar").html(btnGuardar);
+                        $("#AccoutingNombre").html(AccoutingNombre);
+
+
+                        $("#DescriptionText, #DebitText, #CreditText").alphanum({
+                            allowNumeric: true,
+                            allowSpace: true,
+                            allowLatin: true,
+                            allowOtherCharSets: false
+                        });
+
+                        $("#HoldingAccount, #DebitTransactionId, #CreditTransactionId").alphanum({
+                            allowNumeric: true,
+                            allowSpace: false,
+                            allowLatin: false,
+                            allowOtherCharSets: false
+                        });                                                 
+                        
+                        $("#formularioAccountingNuevo #ProcessId").val(processItem.value);
+                        $("#formularioAccountingNuevo #CurrencyId").val(currencyItem.value);
+                        $("#formularioAccountingNuevo #BusinessId").val(businessItem.value);
+                        
+                        $("#formularioAccountingNuevo #Process").val(processItem.label);
+                        $("#formularioAccountingNuevo #Currency").val(currencyItem.label);
+                        $("#formularioAccountingNuevo #Business").val(businessItem.label);
+
+                        $('#ok').jqxButton({ theme: 'ui-start', width: 100, height: 26 });
+                        $('#cancel').jqxButton({ theme: 'ui-start', width: 100, height: 26 });
+                        
+                        $("#ok").click(function (e) {
+                            e.preventDefault();
+
+                            limpiarValidaciones();
+
+                            $.validator.unobtrusive.parseDynamicContent("#accountingNewContainer #formularioAccountingNuevo");
+
+                            if (validar(null, $("#accountingNewContainer #formularioAccountingNuevo"))) {
+                                ingresarAccounting(window);
+                            }
+
+                        });
+
+                        $("#cancel").click(function (e) {
+                            e.preventDefault();
+                            limpiarValidaciones();
+                            desplegarMensaje(cultureName == 'es-CL' ? 'La adición de contabilidad sera cancelada. Está seguro de realizar ésta operación?' : 'The add accounting will be canceled. Are you sure this operation?', 'Confirmación', true, function (event) {
+                                if (event.args.dialogResult.OK) {
+                                    $(window).jqxWindow('close');
+                                }
+                            });
+                        });
+
+                    }
+                });
+
+                $(window).on('close', function (event) {
+                    limpiarValidaciones();
+                    $(this).jqxWindow('destroy');
+                });
+
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+                $('#jqxLoader').jqxLoader('close');
+                $(window).jqxWindow('destroy');
+
+                if (jqXHR.status === 401)
+                    if (jqXHR.responseJSON != undefined)
+                        window.location.href = jqXHR.responseJSON.LogOnUrl;
+                    else
+                        window.location.href = JSON.parse(jqXHR.responseText).LogOnUrl;
+                else
+                    desplegarMensaje(cultureName == 'es-CL' ? 'Se produjo un error al intentar obtener el formulario de ingreso de contabilidad. Contactese con su administrador.' : 'An error occurred while trying to get the accounting entry form. Contact with your administrator.', 'Error');
+            });
+
+        };
+
+        //..............        
+
+        var accountingEdit = function () {
+
+            //evitar que se abra 2 veces el modal y error de seleccionar fila
+            if ($("#accountingEditContainer").length > 0 || $("#accountingNewContainer").length > 0)
+                return false;
+
+            $('#jqxLoader').jqxLoader('open');
+
+            var urlFormularioAccoutingEdit = '@Url.RouteUrl("Mantenedores_default", new { area = "Mantenedores", controller = "Accounting", action = "FormularioAccountingEdit" })';
+
+            var rowindex = $('#jqxGridAccounting').jqxGrid('getselectedrowindex');
+
+            if (rowindex == -1)
+            {
+                $('#jqxLoader').jqxLoader('close');
+                desplegarMensaje(cultureName == 'es-CL' ? "Debe seleccionar al menos una fila de la grilla." : "Must select at least one row from the grid.", 'Advertencia');
+                return false;
+            }
+
+            var data = $('#jqxGridAccounting').jqxGrid('getrowdata', rowindex);            
+
+            $.ajax({
+                url: urlFormularioAccoutingEdit,
+                dataType: "html",
+                data: { id: data.Id },
+                cache: false
+            })
+            .done(function (data) {
+
+                //evitar que se abra 2 veces el modal
+                if ($("#accountingEditContainer").length > 0 || $("#accountingNewContainer").length > 0)
+                    return false;
+
+                var window = $(data);
+
+                window.appendTo(document.body);
+
+                $('#jqxLoader').jqxLoader('close');
+
+                $(window).jqxWindow({
+                    maxHeight: 400, maxWidth: 600, minHeight: 30, minWidth: 250, height: 400, width: 550, theme: 'ui-start',
+                    resizable: false, isModal: true, modalOpacity: 0.7, 
+                    initContent: function () {
+
+                        var btnCancelar = cultureName == "en-US" ? "Cancel" : "Cancelar";
+                        var btnGuardar = cultureName == "en-US" ? "Save" : "Guardar";
+                        var AccoutingNombre = cultureName == "en-US" ? "Accouting" : "Contabilidad";
+                        $("#btnCancelar").html(btnCancelar);
+                        $("#btnGuardar").html(btnGuardar);
+                        $("#AccoutingNombre").html(AccoutingNombre);
+
+                        $("#DescriptionText, #DebitText, #CreditText").alphanum({
+                            allowNumeric: true,
+                            allowSpace: true,
+                            allowLatin: true,
+                            allowOtherCharSets: false
+                        });
+
+                        $("#HoldingAccount, #DebitTransactionId, #CreditTransactionId").alphanum({
+                            allowNumeric: true,
+                            allowSpace: false,
+                            allowLatin: false,
+                            allowOtherCharSets: false
+                        });
+                        
+
+                        $('#ok').jqxButton({ theme: 'ui-start', width: 100, height: 26 });
+                        $('#cancel').jqxButton({ theme: 'ui-start', width: 100, height: 26 });
+                       
+                        $("#ok").click(function (e) {
+                            e.preventDefault();
+
+                            limpiarValidaciones();
+
+                            $.validator.unobtrusive.parseDynamicContent("#accountingEditContainer #formularioAccountingEdit");
+
+                            if (validar(null, $("#accountingEditContainer #formularioAccountingEdit"))) {
+                                editarAccounting(window);
+                            }
+
+                        });
+
+                        $("#cancel").click(function (e) {
+                            e.preventDefault();
+                            limpiarValidaciones();
+                            desplegarMensaje(cultureName == 'es-CL' ? 'El cambio de la contabilidad sera cancelada. Está seguro de realizar ésta operación?' : 'The change accounting will be canceled. Are you sure this operation?', 'Confirmación', true, function (event) {
+                                if (event.args.dialogResult.OK) {
+                                    $(window).jqxWindow('close');
+                                }
+                            });
+                        });
+
+                    }
+                });
+
+                $(window).on('close', function (event) {
+                    limpiarValidaciones();
+                    $(this).jqxWindow('destroy');
+                });
+
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+
+                $('#jqxLoader').jqxLoader('close');
+                $(window).jqxWindow('destroy');
+
+                if (jqXHR.status === 401)
+                    if (jqXHR.responseJSON != undefined)
+                        window.location.href = jqXHR.responseJSON.LogOnUrl;
+                    else
+                        window.location.href = JSON.parse(jqXHR.responseText).LogOnUrl;
+                else
+                    desplegarMensaje(cultureName == 'es-CL' ? 'Se produjo un error al intentar obtener el formulario de edición de contabilidad. Contactese con su administrador.' : 'An error occurred while trying to get the accounting edit form. Contact with your administrator.', 'Error');
+            });
+
+        };
+
+
+        //..............        
+
+
+        var accountingDelete = function () {
+
+            //evitar que se abra 2 veces el modal y error de seleccionar fila
+            if ($("#accountingEditContainer").length > 0 || $("#accountingNewContainer").length > 0)
+                return false;            
+
+            var rowindex = $('#jqxGridAccounting').jqxGrid('getselectedrowindex');
+
+            if (rowindex == -1) {                
+                desplegarMensaje(cultureName == 'es-CL' ? "Debe seleccionar al menos una fila de la grilla." : "Must select at least one row from the grid.", 'Advertencia');
+                return false;
+            }            
+
+            desplegarMensaje(cultureName == 'es-CL' ? 'El parametro Contabilidad sera eliminado. Está seguro de realizar ésta operación?' : 'The Accounting parameter will be removed. Are you sure this operation?', 'Confirmación', true, function (event) {
+
+                if (event.args.dialogResult.OK) {
+
+                    var urlEliminarTransactionTypeBatchConfiguration = '@Url.RouteUrl("Mantenedores_default", new{ area = "Mantenedores", controller = "Accounting", action = "EliminarAccounting" })'
+                    var selectedrowindex = $('#jqxGridAccounting').jqxGrid('selectedrowindex');
+                    var selectedRowData = $('#jqxGridAccounting').jqxGrid('getrowdata', selectedrowindex);
+
+                    //$("#jqxGridAccounting").jqxGrid('showloadelement');
+                    $("#jqxGridAccounting").jqxGrid({ disabled: true });
+
+                        $('#jqxLoader').jqxLoader('open');
+
+                        $.post(urlEliminarTransactionTypeBatchConfiguration, { id: selectedRowData.Id }, "json")
+                        .done(function (data) {
+
+                            if (jQuery.parseJSON(data.answer)) {
+
+                                $('#jqxLoader').jqxLoader('close');
+
+                                desplegarMensaje(data.mensaje, 'Mensajes');
+                            } else {
+
+                                $('#jqxLoader').jqxLoader('close');
+
+                                desplegarMensaje(data.mensaje, 'Error');
+                            }
+
+                            controlsAccounting.updateData();
+
+                        })
+                        .fail(function (jqXHR, textStatus, errorThrown) {
+                            $("#jqxBatchSettingGrid").jqxGrid('hideloadelement');
+                            $("#jqxBatchSettingGrid").jqxGrid({ disabled: false });
+
+                            if (jqXHR.status === 401)
+                                if (jqXHR.responseJSON != undefined)
+                                    window.location.href = jqXHR.responseJSON.LogOnUrl;
+                                else
+                                    window.location.href = JSON.parse(jqXHR.responseText).LogOnUrl;
+                            else
+                                desplegarMensaje(cultureName == 'es-CL' ? 'Se produjo un error al intentar eliminar el parametro. Contactese con su administrador.' : 'An error occurred while trying to delete parameter. Contact with your administrator.', 'Error');
+                        });
+
+                    }
+
+                });
+
+        }
+
+        //________ Ingresar Accounting
+
+        var ingresarAccounting = function (parentWindow) {
+
+            var urlIngresar = $("#accountingNewContainer #formularioAccountingNuevo").attr("action");
+
+            var formulario = $("#accountingNewContainer #formularioAccountingNuevo").serialize();
+
+            var token = $('#formularioAccountingNuevo [name=__RequestVerificationToken]').val();
+
+            $(parentWindow).jqxWindow('destroy');
+
+            //$("#formularioAccounting #jqxGridAccounting").jqxGrid('showloadelement');
+            $("#formularioAccounting #jqxGridAccounting").jqxGrid({ disabled: true });
+
+            $('#jqxLoader').jqxLoader('open');
+
+            $.ajax({
+                type: "POST",
+                url: urlIngresar,
+                headers: { "__RequestVerificationToken": token },
+                data: formulario,
+                dataType: "json"
+            }).done(function (data, textStatus, jqXHR) {
+
+                if (jQuery.parseJSON(data.answer)) {
+
+                    $('#jqxLoader').jqxLoader('close');
+
+                    desplegarMensaje(data.mensaje, 'Mensajes');
+
+                    controlsAccounting.updateData();
+
+                } else {
+
+                    $('#jqxLoader').jqxLoader('close');
+
+                    desplegarMensaje(data.mensaje, 'Error');
+                }
+
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+
+                $("#formularioAccounting #jqxGridAccounting").jqxGrid('hideloadelement');
+                $("#formularioAccounting #jqxGridAccounting").jqxGrid({ disabled: false });
+
+                if (jqXHR.status === 401)
+                    if (jqXHR.responseJSON != undefined)
+                        window.location.href = jqXHR.responseJSON.LogOnUrl;
+                    else
+                        window.location.href = JSON.parse(jqXHR.responseText).LogOnUrl;
+                else
+                    desplegarMensaje(cultureName == 'es-CL' ? 'Se produjo un error al intentar guardar los datos. Contactese con su administrador.' : 'An error occurred while trying to save the data. Contact with your administrator.', 'Error');
+            });
+        }
+
+        //________ Editar Transaction code
+
+        var editarAccounting = function (parentWindow) {
+
+            var urlIngresar = $("#accountingEditContainer #formularioAccountingEdit").attr("action");
+
+            var formulario = $("#accountingEditContainer #formularioAccountingEdit").serialize();            
+
+            var token = $('#formularioAccountingEdit [name=__RequestVerificationToken]').val();
+
+            $(parentWindow).jqxWindow('destroy');
+
+            //$("#formularioAccounting #jqxGridAccounting").jqxGrid('showloadelement');
+            $("#formularioAccounting #jqxGridAccounting").jqxGrid({ disabled: true });
+
+            $('#jqxLoader').jqxLoader('open');
+
+            $.ajax({
+                type: "POST",
+                url: urlIngresar,
+                headers: { "__RequestVerificationToken": token },
+                data: formulario,
+                dataType: "json"
+            }).done(function (data, textStatus, jqXHR) {
+
+                if (jQuery.parseJSON(data.answer)) {
+
+                    $('#jqxLoader').jqxLoader('close');
+
+                    desplegarMensaje(data.mensaje, 'Mensajes');
+
+                    controlsAccounting.updateData();
+
+                } else {
+
+                    $('#jqxLoader').jqxLoader('close');
+
+                    desplegarMensaje(data.mensaje, 'Error');
+                }
+
+            })
+            .fail(function (jqXHR, textStatus, errorThrown) {
+
+                $("#formularioAccounting #jqxGridAccounting").jqxGrid('hideloadelement');
+                $("#formularioAccounting #jqxGridAccounting").jqxGrid({ disabled: false });
+
+                if (jqXHR.status === 401)
+                    if (jqXHR.responseJSON != undefined)
+                        window.location.href = jqXHR.responseJSON.LogOnUrl;
+                    else
+                        window.location.href = JSON.parse(jqXHR.responseText).LogOnUrl;
+                else
+                    desplegarMensaje(cultureName == 'es-CL' ? 'Se produjo un error al intentar guardar los datos. Contactese con su administrador.' : 'An error occurred while trying to save the data. Contact with your administrator.', 'Error');
+            });
+        }
+
+    </script>
+
+    }
