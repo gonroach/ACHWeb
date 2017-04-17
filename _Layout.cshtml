@@ -1,0 +1,31 @@
+﻿@{
+    ViewBag.Title = "Inicio";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles{
+    @Styles.Render("~/Content/pure")
+    @Styles.Render("~/Content/fontStyle")
+    @Styles.Render("~/Content/jqwidgetsStyle")
+    @Styles.Render("~/Content/applicationStyle")
+}
+
+@section Scripts{
+    @Scripts.Render("~/bundles/modernizr")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/jqueryDynamic")
+    @Scripts.Render("~/bundles/mvcfoolproof")
+    @Scripts.Render("~/bundles/jqueryAlphaNum")
+    @Scripts.Render("~/bundles/jqwidgetsScript")
+    @Scripts.Render("~/bundles/globalizacion")
+    @Scripts.Render("~/bundles/Indra")    
+    @RenderSection("Scripts", false)
+}
+@RenderBody()
+
+@section ScriptsOptional{    
+    
+    @Scripts.Render("~/bundles/scriptAplicacion")
+    @RenderSection("ScriptsOptional", false);
+}
